@@ -16,12 +16,15 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Serve where
+module Serve (ServeOpts) where
+
+import Control.Monad.IO.Class
 
 import Options.Applicative
 import Web.Scotty
 
 import Command
+import Config
 
 data ServeOpts = ServeOpts Int
 
@@ -35,7 +38,13 @@ instance Command ServeOpts where
       <> help "Port on which to listen"
       )
   run (ServeOpts port) = scotty port $ do
+    get "/support" $ do
+      supportDoc <- liftIO $ readConfig "browserid"
+      raw supportDoc
+      setHeader "Content-Type" "application/json; charset=UTF-8"
+
     get "/authentication" $
       html "<h1>authentication</h1>"
+
     get "/provisioning" $
       html "<h1>provisioning</h1>"

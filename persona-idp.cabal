@@ -27,6 +27,7 @@ executable persona
     , bytestring == 0.10.*
     , directory == 1.2.*
     , filepath == 1.3.*
+    , transformers == 0.3.*
     , optparse-applicative == 0.7.*
     , scotty == 0.5.*
     , aeson == 0.6.*
