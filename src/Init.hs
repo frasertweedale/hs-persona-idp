@@ -18,11 +18,7 @@
 
 module Init where
 
-import Data.Aeson
-import qualified Data.ByteString.Lazy as L
 import System.Exit
-import System.Directory
-import System.FilePath.Posix
 
 import Options.Applicative
 
@@ -30,6 +26,7 @@ import Crypto.JOSE.JWK
 import Crypto.Persona
 
 import Command
+import Config
 
 data InitOpts = InitOpts String
 
@@ -46,13 +43,9 @@ instance Command InitOpts where
       buildURI = parseRelativeURI . buildURIPath
     in do
       (pub, sec) <- genRSA 512
-
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
-      let supportDoc = SupportDocument pub auth prov
-
-      personaDir <- getAppUserDataDirectory "persona-idp"
-      createDirectoryIfMissing False personaDir
-      L.writeFile (personaDir </> "rsa.pub.json") $ encode pub
-      L.writeFile (personaDir </> "rsa.sec.json") $ encode sec
-      L.writeFile (personaDir </> "browserid") $ encode supportDoc
+      ensureConfigDir
+      writeConfigJSON "rsa.pub.json" pub
+      writeConfigJSON "rsa.sec.json" sec
+      writeConfigJSON "browserid" $ SupportDocument pub auth prov
