@@ -1,0 +1,8 @@
+$doctype 5
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script type="text/javascript" src="#{provisioningApiJsUrl}">
+        <script type="text/javascript" src="#{appRel "provisioning.js" req}">
+    <body>
+        <h1>HI

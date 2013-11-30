@@ -15,13 +15,23 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Serve (ServeOpts) where
 
 import Control.Monad.IO.Class
 
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as L
+import qualified Data.Text as T
+import Network.Wai
 import Options.Applicative
+import Text.Blaze.Renderer.Text
+import Text.Hamlet
+import Text.Julius
 import Web.Scotty
+
+import Crypto.Persona
 
 import Command
 import Config
@@ -43,8 +53,37 @@ instance Command ServeOpts where
       raw supportDoc
       setHeader "Content-Type" "application/json; charset=UTF-8"
 
-    get "/authentication" $
-      html "<h1>authentication</h1>"
+    get "/authentication" $ do
+      req <- request
+      html $ renderMarkup $(shamletFile "src/authentication.hamlet")
 
-    get "/provisioning" $
-      html "<h1>provisioning</h1>"
+    get "/authentication.js" $ do
+      req <- request
+      let template = $(juliusFile "src/authentication.julius")
+      text $ renderJavascriptUrl (\_ _ -> undefined) template
+      setHeader "Content-Type" "text/javascript; charset=UTF-8"
+
+    get "/provisioning" $ do
+      req <- request
+      html $ renderMarkup $(shamletFile "src/provisioning.hamlet")
+
+    get "/provisioning.js" $ do
+      req <- request
+      let template = $(juliusFile "src/provisioning.julius")
+      text $ renderJavascriptUrl (\_ _ -> undefined) template
+      setHeader "Content-Type" "text/javascript; charset=UTF-8"
+
+    post "/provisioning" $ do
+      -- return signed application/jwt if authenticated
+      -- obj <- jsonData
+      -- json $ certification
+      bod <- body
+      liftIO $ L.putStrLn bod
+      html "<h1>certify</h1>"
+
+
+appRoot :: Request -> T.Text
+appRoot = T.intercalate "/" . init . pathInfo
+
+appRel :: T.Text -> Request -> T.Text
+appRel s req = appRoot req `T.append` ('/' `T.cons` T.dropWhile (== '/') s)
