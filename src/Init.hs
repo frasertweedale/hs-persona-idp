@@ -22,7 +22,7 @@ import System.Exit
 
 import Options.Applicative
 
-import Crypto.JOSE.JWK
+import Crypto.JOSE.Legacy
 import Crypto.Persona
 
 import Command
@@ -42,7 +42,7 @@ instance Command InitOpts where
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
     in do
-      (pub, sec) <- genRSA 512
+      (pub, sec) <- genRSA' 512
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
