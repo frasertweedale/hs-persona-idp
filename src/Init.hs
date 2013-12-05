@@ -42,7 +42,7 @@ instance Command InitOpts where
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
     in do
-      (pub, sec) <- genRSA' 512
+      (pub, sec) <- genRSA' 256  -- jwcrypto does not support keys > 2048 bits
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
