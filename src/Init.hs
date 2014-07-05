@@ -1,5 +1,6 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
--- Copyright (C) 2013  Fraser Tweedale
+--
+-- Copyright (C) 2013, 2014  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -22,6 +23,7 @@ import System.Exit
 
 import Options.Applicative
 
+import Crypto.JOSE
 import Crypto.JOSE.Legacy
 import Crypto.Persona
 
@@ -42,10 +44,12 @@ instance Command InitOpts where
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
     in do
-      (pub, sec) <- genRSA' 256  -- jwcrypto does not support keys > 2048 bits
+      entropyPool <- createEntropyPool
+      let g = cprgCreate entropyPool :: SystemRNG
+          k = genRSA' g 256  -- jwcrypto does not support keys > 2048 bits
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
-      writeConfigJSON "rsa.pub.json" pub
-      writeConfigJSON "rsa.sec.json" sec
-      writeConfigJSON "browserid" $ SupportDocument pub auth prov
+      writeConfigJSON "rsa.json" k
+      -- TODO extract public key from private key !!!
+      writeConfigJSON "browserid" $ SupportDocument k auth prov
