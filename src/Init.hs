@@ -24,7 +24,6 @@ import System.Exit
 import Options.Applicative
 
 import Crypto.JOSE
-import Crypto.JOSE.Legacy
 import Crypto.Persona
 
 import Command
@@ -46,7 +45,7 @@ instance Command InitOpts where
     in do
       entropyPool <- createEntropyPool
       let g = cprgCreate entropyPool :: SystemRNG
-          k = genRSA' g 256  -- jwcrypto does not support keys > 2048 bits
+          (k, _) = gen 256 g  -- jwcrypto does not support keys > 2048 bits
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
