@@ -39,7 +39,7 @@ executable persona
     , shakespeare >= 2.0
     , wai >= 3.0
 
-    , jose >= 0.1.27.0
+    , jose >= 0.2.31.0
     , persona >= 0.1
 
   hs-source-dirs:      src
