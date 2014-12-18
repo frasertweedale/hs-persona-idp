@@ -1,5 +1,5 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
--- Copyright (C) 2013  Fraser Tweedale
+-- Copyright (C) 2013, 2014  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -21,9 +21,12 @@ module Serve (ServeOpts) where
 
 import Control.Monad.IO.Class
 
-import Data.Aeson
+import Control.Lens
+import Data.Aeson (Value(String))
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import Network.HTTP.Types.Status
 import Network.Wai
 import Options.Applicative
 import Text.Blaze.Renderer.Text
@@ -32,9 +35,11 @@ import Text.Julius
 import Web.Scotty
 
 import Crypto.Persona
+import Crypto.JOSE.Compact (encodeCompact)
 
 import Command
 import Config
+import Provision
 
 data ServeOpts = ServeOpts Int
 
@@ -58,7 +63,6 @@ instance Command ServeOpts where
       html $ renderMarkup $(shamletFile "src/authentication.hamlet")
 
     get "/authentication.js" $ do
-      req <- request
       let template = $(juliusFile "src/authentication.julius")
       text $ renderJavascriptUrl (\_ _ -> undefined) template
       setHeader "Content-Type" "text/javascript; charset=UTF-8"
@@ -74,13 +78,23 @@ instance Command ServeOpts where
       setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
     post "/provisioning" $ do
-      -- return signed application/jwt if authenticated
-      -- obj <- jsonData
-      -- json $ certification
       bod <- body
       liftIO $ L.putStrLn bod
-      html "<h1>certify</h1>"
 
+      -- decode provisioning request
+      -- TODO check that this returns 400 on no decode
+      --   if not use eitherDecode or `rescue`
+      --
+      provReq <- jsonData
+      if provReq ^. eml /= "frase@frase.id.au" -- TODO check against client S_DN
+        then status forbidden403
+        else do
+          result <- liftIO $ (>>= encodeCompact) <$> provision provReq
+          case result of
+            Left e -> do
+              status internalServerError500
+              text $ TL.pack $ show e
+            Right jwt -> raw jwt
 
 appRoot :: Request -> T.Text
 appRoot = T.intercalate "/" . init . pathInfo

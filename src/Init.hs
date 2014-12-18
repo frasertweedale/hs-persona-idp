@@ -49,6 +49,6 @@ instance Command InitOpts where
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
-      writeConfigJSON "rsa.json" k
-      -- TODO extract public key from private key !!!
-      writeConfigJSON "browserid" $ SupportDocument k auth prov
+      maybe exitFailure (writeConfigJSON "browserid") $
+        supportDocument k auth prov
+      writeConfigJSON "key.json" k  -- TODO mode R/O

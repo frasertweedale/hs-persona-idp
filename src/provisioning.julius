@@ -1,9 +1,5 @@
 (function() {
   navigator.id.beginProvisioning(function(eml, dur) {
-    if (eml != "test.persona@frase.id.au") {
-      navigator.id.raiseProvisioningFailure("user isn't authenticated");
-      return;
-    }
     navigator.id.genKeyPair(function(pub) {
       var xhr = new XMLHttpRequest();
       xhr.open('POST', #{String $ appRel "provisioning" req});
