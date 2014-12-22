@@ -28,7 +28,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Network.HTTP.Types.Status
 import Network.Wai
-import Options.Applicative
+import Options.Applicative hiding (header)
 import Text.Blaze.Renderer.Text
 import Text.Hamlet
 import Text.Julius
@@ -81,20 +81,24 @@ instance Command ServeOpts where
       bod <- body
       liftIO $ L.putStrLn bod
 
-      -- decode provisioning request
       -- TODO check that this returns 400 on no decode
-      --   if not use eitherDecode or `rescue`
-      --
+      --   otherwise use eitherDecode or `rescue`
       provReq <- jsonData
-      if provReq ^. eml /= "frase@frase.id.au" -- TODO check against client S_DN
-        then status forbidden403
-        else do
-          result <- liftIO $ (>>= encodeCompact) <$> provision provReq
-          case result of
-            Left e -> do
-              status internalServerError500
-              text $ TL.pack $ show e
-            Right jwt -> raw jwt
+      dn <- header "SSL_CLIENT_S_DN"
+      maybe (status forbidden403) (checkDN provReq) dn
+
+      where
+      -- TODO proper DN check (email component, not just infix)
+      checkDN provReq dn = if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
+        then readKey provReq
+        else status forbidden403
+      readKey provReq =
+        liftIO (readConfigJSON "key.json") >>= either _500 (sign provReq)
+      sign provReq k =
+        liftIO ((>>= encodeCompact) <$> provision k provReq) >>= either (_500 . show) raw
+
+_500 :: String -> ActionM ()
+_500 s = status internalServerError500 >> text (TL.pack $ show s)
 
 appRoot :: Request -> T.Text
 appRoot = T.intercalate "/" . init . pathInfo

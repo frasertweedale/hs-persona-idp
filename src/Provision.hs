@@ -33,6 +33,7 @@ import Control.Applicative
 import Control.Lens hiding ((.=))
 import Data.Aeson
 import qualified Data.Text as T
+import Data.Time
 
 import Crypto.Random
 import Crypto.JOSE
@@ -53,18 +54,14 @@ instance FromJSON ProvisioningRequest where
     <*> o .: "pub"
     <*> o .: "dur"
 
-provision :: ProvisioningRequest -> IO (Either Error JWT)
-provision ProvisioningRequest{..} = do
+provision :: JWK' -> ProvisioningRequest -> IO (Either Error JWT)
+provision k ProvisioningRequest{..} = do
   g <- cprgCreate <$> createEntropyPool :: IO SystemRNG
-  let _dur' = max _dur 86400
-  return $ fst $ certify g undefined {- TODO signingKey -}
+  t <- getCurrentTime
+  return $ fst $ certify g k
     (fromString "https://frase.id.au/")
-    undefined {- expiry date 'NumericDate'; calculate from dur -}
+    -- SHOULD NOT issue cert valid longer than duration
+    -- MUST NOT issue cert valid longer than 24 hours
+    (NumericDate $ addUTCTime (fromRational $ toRational $ min _dur 86400) t)
     _pub
     (EmailPrincipal _eml)
-
-
-  -- SHOULD NOT issue cert valid longer than duration
-  -- MUST NOT issue cert valid longer than 24 hours
-  --
-  -- issuer, expiry, publickey, principal and JWT
