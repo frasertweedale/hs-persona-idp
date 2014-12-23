@@ -51,4 +51,4 @@ instance Command InitOpts where
       ensureConfigDir
       maybe exitFailure (writeConfigJSON "browserid") $
         supportDocument k auth prov
-      writeConfigJSON "key.json" k  -- TODO mode R/O
+      writeConfigJSON "key.json" k

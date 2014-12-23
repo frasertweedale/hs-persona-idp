@@ -29,6 +29,7 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as L
 import System.FilePath.Posix
 import System.Directory
+import System.Posix.Files (setFileCreationMask)
 
 
 personaDir :: IO String
@@ -45,6 +46,7 @@ readConfigJSON = liftM eitherDecode . readConfig
 
 writeConfig :: String -> L.ByteString -> IO ()
 writeConfig n s = do
+  _ <- setFileCreationMask 0o0077
   dir <- personaDir
   L.writeFile (dir </> n) s
 

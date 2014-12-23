@@ -32,6 +32,7 @@ executable persona
     , text >= 1.1
     , time >= 1.4
     , transformers >= 0.3
+    , unix >= 2.7
 
     , aeson >= 0.7
     , blaze-markup >= 0.6
