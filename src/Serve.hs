@@ -22,8 +22,7 @@ module Serve (ServeOpts) where
 import Control.Monad.IO.Class
 
 import Control.Lens
-import Data.Aeson (Value(String))
-import qualified Data.ByteString.Lazy.Char8 as L
+import Data.Aeson (Value(String), eitherDecode)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Network.HTTP.Types.Status
@@ -77,28 +76,26 @@ instance Command ServeOpts where
       text $ renderJavascriptUrl (\_ _ -> undefined) template
       setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
-    post "/provisioning" $ do
-      bod <- body
-      liftIO $ L.putStrLn bod
-
-      -- TODO check that this returns 400 on no decode
-      --   otherwise use eitherDecode or `rescue`
-      provReq <- jsonData
-      dn <- header "SSL_CLIENT_S_DN"
-      maybe (status forbidden403) (checkDN provReq) dn
-
+    post "/provisioning" $
+      either (respondWith badRequest400) checkAuth . eitherDecode =<< body
       where
       -- TODO proper DN check (email component, not just infix)
-      checkDN provReq dn = if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
-        then readKey provReq
-        else status forbidden403
+      checkAuth provReq =
+        header "SSL_CLIENT_S_DN"
+        >>= maybe (status forbidden403) (checkDN provReq)
+      checkDN provReq dn =
+        if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
+          then readKey provReq
+          else status forbidden403
       readKey provReq =
-        liftIO (readConfigJSON "key.json") >>= either _500 (sign provReq)
+        liftIO (readConfigJSON "key.json")
+        >>= either (respondWith internalServerError500) (sign provReq)
       sign provReq k =
-        liftIO ((>>= encodeCompact) <$> provision k provReq) >>= either (_500 . show) raw
+        liftIO ((>>= encodeCompact) <$> provision k provReq)
+        >>= either (respondWith internalServerError500 . show) raw
 
-_500 :: String -> ActionM ()
-_500 s = status internalServerError500 >> text (TL.pack $ show s)
+respondWith :: Status -> String -> ActionM ()
+respondWith e s = status e >> text (TL.pack $ show s)
 
 appRoot :: Request -> T.Text
 appRoot = T.intercalate "/" . init . pathInfo
