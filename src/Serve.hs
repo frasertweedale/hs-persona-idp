@@ -53,9 +53,12 @@ instance Command ServeOpts where
       )
   run (ServeOpts port) = scotty port $ do
     get "/support" $ do
-      supportDoc <- liftIO $ readConfig "browserid"
-      raw supportDoc
       setHeader "Content-Type" "application/json; charset=UTF-8"
+      liftIO (readConfig "support.json") >>= raw
+
+    get "/delegated-support" $ do
+      setHeader "Content-Type" "application/json; charset=UTF-8"
+      liftIO (readConfig "delegated-support.json") >>= raw
 
     get "/authentication" $ do
       req <- request

@@ -29,7 +29,7 @@ import Crypto.Persona
 import Command
 import Config
 
-data InitOpts = InitOpts String
+data InitOpts = InitOpts String String
 
 instance Command InitOpts where
   parser = InitOpts
@@ -38,7 +38,12 @@ instance Command InitOpts where
       <> metavar "PATH"
       <> help "Path at which the app is hosted, e.g. \"/browserid\""
       )
-  run (InitOpts appPath) =
+    <*> strOption
+      ( long "hostname"
+      <> metavar "HOSTNAME"
+      <> help "Hostname of the authority"
+      )
+  run (InitOpts appPath authority) =
     let
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
@@ -49,6 +54,8 @@ instance Command InitOpts where
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
-      maybe exitFailure (writeConfigJSON "browserid") $
+      maybe exitFailure (writeConfigJSON "support.json") $
         supportDocument k auth prov
+      writeConfigJSON "delegated-support.json" $
+        DelegatedSupportDocument authority
       writeConfigJSON "key.json" k
