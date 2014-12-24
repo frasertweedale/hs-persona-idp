@@ -43,7 +43,7 @@ import Crypto.Persona
 
 data ProvisioningRequest = ProvisioningRequest
   { _eml :: T.Text
-  , _pub :: JWK'
+  , _pub :: T.Text    -- ^ Serialised public key
   , _dur :: Integer
   }
 makeLenses ''ProvisioningRequest
