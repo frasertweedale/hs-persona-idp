@@ -4,8 +4,10 @@
       var xhr = new XMLHttpRequest();
       xhr.open('POST', #{String $ appRel "provisioning" req});
       xhr.onreadystatechange = function () {
-        alert(xhr.
-        alert(xhr.responseText);
+        var DONE = this.DONE || 4;
+        if (this.readyState === DONE) {
+          navigator.id.registerCertificate(this.responseText);
+        }
       };
       xhr.send(JSON.stringify({eml: eml, pub: pub, dur: dur}));
     });
