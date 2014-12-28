@@ -9,7 +9,7 @@
           navigator.id.registerCertificate(this.responseText);
         }
       };
-      xhr.send(JSON.stringify({eml: eml, pub: pub, dur: dur}));
+      xhr.send(JSON.stringify({eml: eml, pub: JSON.parse(pub), dur: dur}));
     });
   });
 })();
