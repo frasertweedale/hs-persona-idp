@@ -58,10 +58,4 @@ provision :: JWK' -> ProvisioningRequest -> IO (Either Error JWT)
 provision k ProvisioningRequest{..} = do
   g <- cprgCreate <$> createEntropyPool :: IO SystemRNG
   t <- getCurrentTime
-  return $ fst $ certify g k
-    (fromString "https://frase.id.au/")
-    -- SHOULD NOT issue cert valid longer than duration
-    -- MUST NOT issue cert valid longer than 24 hours
-    (NumericDate $ addUTCTime (fromRational $ toRational $ min _dur 86400) t)
-    _pub
-    (EmailPrincipal _eml)
+  return $ fst $ certify g k (fromString "test.frase.id.au") t _dur _pub (EmailPrincipal _eml)
