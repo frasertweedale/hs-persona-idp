@@ -54,8 +54,8 @@ instance FromJSON ProvisioningRequest where
     <*> o .: "pub"
     <*> o .: "dur"
 
-provision :: JWK' -> ProvisioningRequest -> IO (Either Error JWT)
-provision k ProvisioningRequest{..} = do
+provision :: JWK' -> StringOrURI -> ProvisioningRequest -> IO (Either Error JWT)
+provision k iss ProvisioningRequest{..} = do
   g <- cprgCreate <$> createEntropyPool :: IO SystemRNG
   t <- getCurrentTime
-  return $ fst $ certify g k (fromString "test.frase.id.au") t _dur _pub (EmailPrincipal _eml)
+  return $ fst $ certify g k iss t _dur _pub (EmailPrincipal _eml)

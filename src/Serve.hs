@@ -20,6 +20,7 @@
 module Serve (ServeOpts) where
 
 import Control.Monad.IO.Class
+import Data.Maybe (fromMaybe)
 
 import Control.Lens
 import Data.Aeson (Value(String), eitherDecode)
@@ -33,8 +34,9 @@ import Text.Hamlet
 import Text.Julius
 import Web.Scotty
 
+import Crypto.JOSE (encodeCompact)
+import Crypto.JWT (fromString)
 import Crypto.Persona
-import Crypto.JOSE.Compact (encodeCompact)
 
 import Command
 import Config
@@ -79,22 +81,23 @@ instance Command ServeOpts where
       text $ renderJavascriptUrl (\_ _ -> undefined) template
       setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
-    post "/provisioning" $
-      either (respondWith badRequest400) checkAuth . eitherDecode =<< body
+    post "/provisioning" $ do
+      iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
+      either (respondWith badRequest400) (checkAuth iss) . eitherDecode =<< body
       where
       -- TODO proper DN check (email component, not just infix)
-      checkAuth provReq =
+      checkAuth iss provReq =
         header "SSL_CLIENT_S_DN"
-        >>= maybe (status forbidden403) (checkDN provReq)
-      checkDN provReq dn =
+        >>= maybe (status forbidden403) (checkDN iss provReq)
+      checkDN iss provReq dn =
         if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
-          then readKey provReq
+          then readKey iss provReq
           else status forbidden403
-      readKey provReq =
+      readKey iss provReq =
         liftIO (readConfigJSON "key.json")
-        >>= either (respondWith internalServerError500) (sign provReq)
-      sign provReq k =
-        liftIO ((>>= encodeCompact) <$> provision k provReq)
+        >>= either (respondWith internalServerError500) (sign iss provReq)
+      sign iss provReq k =
+        liftIO ((>>= encodeCompact) <$> provision k iss provReq)
         >>= either (respondWith internalServerError500 . show) raw
 
 respondWith :: Status -> String -> ActionM ()
