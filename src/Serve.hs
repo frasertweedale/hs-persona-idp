@@ -21,6 +21,7 @@ module Serve (ServeOpts) where
 
 import Control.Monad.IO.Class
 import Data.Maybe (fromMaybe)
+import System.Exit
 
 import Control.Lens
 import Data.Aeson (Value(String), eitherDecode)
@@ -53,52 +54,56 @@ instance Command ServeOpts where
       <> metavar "N"
       <> help "Port on which to listen"
       )
-  run (ServeOpts port) = scotty port $ do
-    get "/support" $ do
-      setHeader "Content-Type" "application/json; charset=UTF-8"
-      liftIO (readConfig "support.json") >>= raw
+  run (ServeOpts port) = do
+    support <- readConfig "support.json"
+    delegatedSupport <- readConfig "delegated-support.json"
+    k <- either (\e -> print e >> exitFailure) return
+      =<< readConfigJSON "key.json"
 
-    get "/delegated-support" $ do
-      setHeader "Content-Type" "application/json; charset=UTF-8"
-      liftIO (readConfig "delegated-support.json") >>= raw
+    scotty port $ do
+      get "/support" $ do
+        setHeader "Content-Type" "application/json; charset=UTF-8"
+        raw support
 
-    get "/authentication" $ do
-      req <- request
-      html $ renderMarkup $(shamletFile "src/authentication.hamlet")
+      get "/delegated-support" $ do
+        setHeader "Content-Type" "application/json; charset=UTF-8"
+        raw delegatedSupport
 
-    get "/authentication.js" $ do
-      let template = $(juliusFile "src/authentication.julius")
-      text $ renderJavascriptUrl (\_ _ -> undefined) template
-      setHeader "Content-Type" "text/javascript; charset=UTF-8"
+      get "/authentication" $ do
+        req <- request
+        html $ renderMarkup $(shamletFile "src/authentication.hamlet")
 
-    get "/provisioning" $ do
-      req <- request
-      html $ renderMarkup $(shamletFile "src/provisioning.hamlet")
+      get "/authentication.js" $ do
+        let template = $(juliusFile "src/authentication.julius")
+        text $ renderJavascriptUrl (\_ _ -> undefined) template
+        setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
-    get "/provisioning.js" $ do
-      req <- request
-      let template = $(juliusFile "src/provisioning.julius")
-      text $ renderJavascriptUrl (\_ _ -> undefined) template
-      setHeader "Content-Type" "text/javascript; charset=UTF-8"
+      get "/provisioning" $ do
+        req <- request
+        html $ renderMarkup $(shamletFile "src/provisioning.hamlet")
 
-    post "/provisioning" $ do
-      iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
-      either (respondWith badRequest400) (checkAuth iss) . eitherDecode =<< body
-      where
-      -- TODO proper DN check (email component, not just infix)
-      checkAuth iss provReq =
-        header "SSL_CLIENT_S_DN"
-        >>= maybe (status forbidden403) (checkDN iss provReq)
-      checkDN iss provReq dn =
-        if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
-          then readKey iss provReq
-          else status forbidden403
-      readKey iss provReq =
-        liftIO (readConfigJSON "key.json")
-        >>= either (respondWith internalServerError500) (sign iss provReq)
-      sign iss provReq k =
-        liftIO ((>>= encodeCompact) <$> provision k iss provReq)
-        >>= either (respondWith internalServerError500 . show) raw
+      get "/provisioning.js" $ do
+        req <- request
+        let template = $(juliusFile "src/provisioning.julius")
+        text $ renderJavascriptUrl (\_ _ -> undefined) template
+        setHeader "Content-Type" "text/javascript; charset=UTF-8"
+
+      post "/provisioning" $
+        let
+          -- TODO proper DN check (email component, not just infix)
+          checkAuth iss provReq =
+            header "SSL_CLIENT_S_DN"
+            >>= maybe (status forbidden403) (checkDN iss provReq)
+          checkDN iss provReq dn =
+            if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
+              then sign iss provReq
+              else status forbidden403
+          sign iss provReq =
+            liftIO ((>>= encodeCompact) <$> provision k iss provReq)
+            >>= either (respondWith internalServerError500 . show) raw
+        in do
+          iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
+          either (respondWith badRequest400) (checkAuth iss) . eitherDecode =<< body
 
 respondWith :: Status -> String -> ActionM ()
 respondWith e s = status e >> text (TL.pack $ show s)
