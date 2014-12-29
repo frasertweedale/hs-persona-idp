@@ -66,15 +66,6 @@ instance Command ServeOpts where
       get "/support" $ serveRawJSON support
       get "/.well-known/browserid" $ serveRawJSON support
 
-      get "/authentication" $ do
-        req <- request
-        html $ renderMarkup $(shamletFile "src/authentication.hamlet")
-
-      get "/authentication.js" $ do
-        let template = $(juliusFile "src/authentication.julius")
-        text $ renderJavascriptUrl (\_ _ -> undefined) template
-        setHeader "Content-Type" "text/javascript; charset=UTF-8"
-
       get "/provisioning" $ do
         req <- request
         html $ renderMarkup $(shamletFile "src/provisioning.hamlet")

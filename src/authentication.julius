@@ -1,6 +1,0 @@
-(function() {
-  navigator.id.beginAuthentication(function(eml) {
-    // TODO update UI to display the email address
-    navigator.id.completeAuthentication();
-  });
-})();
