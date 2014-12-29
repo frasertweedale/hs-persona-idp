@@ -88,22 +88,25 @@ instance Command ServeOpts where
         text $ renderJavascriptUrl (\_ _ -> undefined) template
         setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
-      post "/provisioning" $
-        let
-          -- TODO proper DN check (email component, not just infix)
-          checkAuth iss provReq =
-            header "SSL_CLIENT_S_DN"
-            >>= maybe (status forbidden403) (checkDN iss provReq)
-          checkDN iss provReq dn =
-            if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
-              then sign iss provReq
-              else status forbidden403
-          sign iss provReq =
-            liftIO ((>>= encodeCompact) <$> provision k iss provReq)
-            >>= either (respondWith internalServerError500 . show) raw
-        in do
-          iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
-          either (respondWith badRequest400) (checkAuth iss) . eitherDecode =<< body
+      post "/provisioning" $ do
+        iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
+        provReq' <- body
+        case eitherDecode provReq' of
+          Left e -> respondWith badRequest400 e
+          Right provReq -> do
+            -- TODO proper DN check (email component, not just infix)
+            dn' <- header "SSL_CLIENT_S_DN"
+            case dn' of
+              Nothing -> status forbidden403
+              Just dn ->
+                if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
+                then do
+                  result <- liftIO ((>>= encodeCompact) <$> provision k iss provReq)
+                  case result of
+                    Left e -> respondWith internalServerError500 (show e)
+                    Right cert -> raw cert
+                else
+                  status forbidden403
 
 respondWith :: Status -> String -> ActionM ()
 respondWith e s = status e >> text (TL.pack $ show s)
