@@ -25,6 +25,7 @@ import System.Exit
 
 import Control.Lens
 import Data.Aeson (Value(String), eitherDecode)
+import qualified Data.ByteString.Lazy as L
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Network.HTTP.Types.Status
@@ -61,13 +62,9 @@ instance Command ServeOpts where
       =<< readConfigJSON "key.json"
 
     scotty port $ do
-      get "/support" $ do
-        setHeader "Content-Type" "application/json; charset=UTF-8"
-        raw support
-
-      get "/delegated-support" $ do
-        setHeader "Content-Type" "application/json; charset=UTF-8"
-        raw delegatedSupport
+      get "/delegated-support" $ serveRawJSON delegatedSupport
+      get "/support" $ serveRawJSON support
+      get "/.well-known/browserid" $ serveRawJSON support
 
       get "/authentication" $ do
         req <- request
@@ -107,6 +104,12 @@ instance Command ServeOpts where
                     Right cert -> raw cert
                 else
                   status forbidden403
+
+contentTypeJSON :: ActionM ()
+contentTypeJSON = setHeader "Content-Type" "application/json; charset=UTF-8"
+
+serveRawJSON :: L.ByteString -> ActionM ()
+serveRawJSON s = contentTypeJSON >> raw s
 
 respondWith :: Status -> String -> ActionM ()
 respondWith e s = status e >> text (TL.pack $ show s)
