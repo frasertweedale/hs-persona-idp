@@ -20,7 +20,6 @@
 module Serve (ServeOpts) where
 
 import Control.Monad.IO.Class
-import Data.Maybe (fromMaybe)
 import System.Exit
 
 import Control.Lens
@@ -56,7 +55,6 @@ instance Command ServeOpts where
   run (ServeOpts port) = do
     let handleError = either (\e -> print e >> exitFailure) return
     delegatedSupport <- handleError =<< readConfigJSON "delegated-support.json"
-      :: IO DelegatedSupportDocument
     support <- handleError =<< readConfigJSON "support.json"
     k <- handleError =<< readConfigJSON "key.json"
 
@@ -74,7 +72,6 @@ instance Command ServeOpts where
         setHeader "Content-Type" "text/javascript; charset=UTF-8"
 
       post "/provisioning" $ do
-        iss <- fromString . TL.toStrict . fromMaybe "localhost" <$> header "Host"
         provReq' <- body
         case eitherDecode provReq' of
           Left e -> respondWith badRequest400 e
@@ -86,6 +83,7 @@ instance Command ServeOpts where
               Just dn ->
                 if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
                 then do
+                  let iss = fromString $ T.pack $ delegatedSupport ^. authority
                   result <- liftIO ((>>= encodeCompact) <$> provision k iss provReq)
                   case result of
                     Left e -> respondWith internalServerError500 (show e)
