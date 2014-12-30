@@ -43,7 +43,7 @@ executable persona
     , shakespeare >= 2.0
 
     , crypto-random
-    , jose >= 0.2.31.0
+    , jose >= 0.3.38
     , persona >= 0.1
 
   hs-source-dirs:      src
