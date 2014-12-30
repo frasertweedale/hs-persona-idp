@@ -43,7 +43,7 @@ instance Command InitOpts where
       <> metavar "HOSTNAME"
       <> help "Hostname of the authority"
       )
-  run (InitOpts appPath authority) =
+  run (InitOpts appPath host) =
     let
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
@@ -57,5 +57,5 @@ instance Command InitOpts where
       maybe exitFailure (writeConfigJSON "support.json") $
         supportDocument k auth prov
       writeConfigJSON "delegated-support.json" $
-        DelegatedSupportDocument authority
+        DelegatedSupportDocument host
       writeConfigJSON "key.json" k
