@@ -41,7 +41,6 @@ executable persona
     , optparse-applicative == 0.9.*
     , scotty >= 0.8
     , shakespeare >= 2.0
-    , wai >= 3.0
 
     , crypto-random
     , jose >= 0.2.31.0
