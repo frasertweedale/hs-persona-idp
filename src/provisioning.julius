@@ -2,7 +2,7 @@
   navigator.id.beginProvisioning(function(eml, dur) {
     navigator.id.genKeyPair(function(pub) {
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', #{String $ appRel "provisioning" req});
+      xhr.open('POST', #{toJSON $ support ^. provisioning});
       xhr.onreadystatechange = function () {
         var DONE = this.DONE || 4;
         if (this.readyState === DONE) {

@@ -3,6 +3,6 @@ $doctype 5
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <script type="text/javascript" src="#{provisioningApiJsUrl}">
-        <script type="text/javascript" src="#{appRel "provisioning.js" req}">
+        <script type="text/javascript" src="#{show (support ^. provisioning) ++ ".js"}">
     <body>
         <h1>HI

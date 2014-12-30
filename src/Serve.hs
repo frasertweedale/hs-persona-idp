@@ -24,12 +24,10 @@ import Data.Maybe (fromMaybe)
 import System.Exit
 
 import Control.Lens
-import Data.Aeson (Value(String), eitherDecode)
-import qualified Data.ByteString.Lazy as L
+import Data.Aeson (eitherDecode, toJSON)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Network.HTTP.Types.Status
-import Network.Wai
 import Options.Applicative hiding (header)
 import Text.Blaze.Renderer.Text
 import Text.Hamlet
@@ -56,22 +54,21 @@ instance Command ServeOpts where
       <> help "Port on which to listen"
       )
   run (ServeOpts port) = do
-    support <- readConfig "support.json"
-    delegatedSupport <- readConfig "delegated-support.json"
-    k <- either (\e -> print e >> exitFailure) return
-      =<< readConfigJSON "key.json"
+    let handleError = either (\e -> print e >> exitFailure) return
+    delegatedSupport <- handleError =<< readConfigJSON "delegated-support.json"
+      :: IO DelegatedSupportDocument
+    support <- handleError =<< readConfigJSON "support.json"
+    k <- handleError =<< readConfigJSON "key.json"
 
     scotty port $ do
-      get "/delegated-support" $ serveRawJSON delegatedSupport
-      get "/support" $ serveRawJSON support
-      get "/.well-known/browserid" $ serveRawJSON support
+      get "/delegated-support" $ json delegatedSupport
+      get "/support" $ json support
+      get "/.well-known/browserid" $ json support
 
-      get "/provisioning" $ do
-        req <- request
+      get "/provisioning" $
         html $ renderMarkup $(shamletFile "src/provisioning.hamlet")
 
       get "/provisioning.js" $ do
-        req <- request
         let template = $(juliusFile "src/provisioning.julius")
         text $ renderJavascriptUrl (\_ _ -> undefined) template
         setHeader "Content-Type" "text/javascript; charset=UTF-8"
@@ -96,17 +93,5 @@ instance Command ServeOpts where
                 else
                   status forbidden403
 
-contentTypeJSON :: ActionM ()
-contentTypeJSON = setHeader "Content-Type" "application/json; charset=UTF-8"
-
-serveRawJSON :: L.ByteString -> ActionM ()
-serveRawJSON s = contentTypeJSON >> raw s
-
 respondWith :: Status -> String -> ActionM ()
 respondWith e s = status e >> text (TL.pack $ show s)
-
-appRoot :: Request -> T.Text
-appRoot = T.intercalate "/" . init . pathInfo
-
-appRel :: T.Text -> Request -> T.Text
-appRel s req = appRoot req `T.append` ('/' `T.cons` T.dropWhile (== '/') s)
