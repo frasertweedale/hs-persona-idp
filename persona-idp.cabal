@@ -24,7 +24,7 @@ executable persona
   ghc-options:  -Wall
 
   build-depends:
-    base >=4.6
+    base >= 4.6 && < 5
     , bytestring >= 0.10
     , directory >= 1.2
     , filepath >= 1.3
