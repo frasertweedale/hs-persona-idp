@@ -1,9 +1,17 @@
 name:                persona-idp
 version:             0.1.0.0
 synopsis:            Persona (BrowserID) Identity Provider
-description:         Persona (BrowserID) Identity Provider
+description:
+  .
+  persona-idp is a simple Mozilla Persona (formerly BrowserID)
+  identity provider (IdP) intended to be run behind an HTTP
+  server providing TLS termination and user authentication.
+  .
+  For full documentation see
+  <https://github.com/frasertweedale/hs-persona-idp>.
+
 homepage:            https://github.com/frasertweedale/hs-persona-idp
-homepage:            https://github.com/frasertweedale/hs-persona-idp/issues
+bug-reports:         https://github.com/frasertweedale/hs-persona-idp/issues
 license:             AGPL-3
 license-file:        agpl-3.0.txt
 extra-source-files:
