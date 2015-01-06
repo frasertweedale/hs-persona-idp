@@ -7,10 +7,10 @@ homepage:            https://github.com/frasertweedale/hs-persona-idp/issues
 license:             AGPL-3
 license-file:        agpl-3.0.txt
 extra-source-files:
-  README.md
+  README.rst
 author:              Fraser Tweedale
 maintainer:          frase@frase.id.au
-copyright:           Copyright (C) 2013, 2014  Fraser Tweedale
+copyright:           Copyright (C) 2013, 2014, 2015  Fraser Tweedale
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
