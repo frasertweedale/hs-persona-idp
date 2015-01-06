@@ -157,6 +157,8 @@ it under the terms of the `GNU Affero General Public License`__ as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
+__ http://www.gnu.org/licenses/agpl.html
+
 
 Contributing
 ============
