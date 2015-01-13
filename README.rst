@@ -51,16 +51,30 @@ proxy providing TLS termination and user authentication.
 Web server configuration
 ========================
 
-TLS is required.  Furthermore, persona-idp requires the webserver to
-authenticate users.  Currently, only X.509 client certificate
-authentication is supported.  Acquiring a server certificate and
-creating client certificates is beyond the scope of this README.
+TLS is required.  Acquiring a server certificate and enabling TLS is
+beyond the scope of this README.
 
-Support for additional authentication methods could be added.
-Please contact the author to discuss.
+persona-idp requires the webserver to authenticate users.  Several
+mechanisms are supported:
+
+* Any authentication mechanism where the user's email address can be
+  provided to the IdP via the ``REMOTE_USER`` HTTP header.
+
+* X.509 client certificate authentication can be used.  The
+  ``REMOTE_USER`` header MUST NOT be set, and the PEM-encoded client
+  certificate is provided in the ``SSL_CLIENT_CERT`` header.  The
+  email address is first looked for in the Subject Alternative Name
+  extension, then the Subject DN.
+
+Support for other authentication methods could be added.  Please
+contact the author to discuss.
 
 Nginx
 -----
+
+The following example explains how to configure Nginx to use client
+certificate authentication.  The IdP is assumed to be running on the
+same host as Nginx and listening on port 3000.
 
 Nginx does not support the ``ssl_verify_client`` directive in
 location context, so the server as a whole must request (but not
@@ -68,8 +82,7 @@ require) a client certificate.  If a valid certificate is provided,
 details are passed to the IdP via the ``proxy_set_header``
 directive.
 
-This example configuration assumes that the IdP is running on the
-same host as Nginx, on the default port::
+::
 
     server {
         listen 443 ssl;
@@ -79,7 +92,7 @@ same host as Nginx, on the default port::
 
         ssl_client_certificate /path/to/ca.pem;
         ssl_verify_client optional;
-        proxy_set_header SSL_CLIENT_S_DN $ssl_client_s_dn;
+        proxy_set_header SSL_CLIENT_CERT $ssl_client_cert;
 
         location / {
             proxy_pass http://localhost:3000;
