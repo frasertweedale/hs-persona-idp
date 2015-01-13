@@ -44,10 +44,12 @@ remoteUserLookupX509 :: RemoteUserLookup
 remoteUserLookupX509 = RemoteUserLookup "SSL_CLIENT_CERT" f
   where
   f = either (const Nothing) getEmail
-    . (decodeSignedCertificate <=< content <=< pemParseBS)
+    . (decodeSignedCertificate <=< content <=< pemParseBS . B.map tabToLf)
   getEmail = fmap (T.encodeUtf8 . T.pack) . certLookupEmail . getCertificate
   content [] = Left "nothing to see here"
   content (x:_) = Right (pemContent x)
+  tabToLf 9 = 10
+  tabToLf c = c
 
 certLookupEmail :: Certificate -> Maybe String
 certLookupEmail a = sanEmail a <|> sdnEmail a
