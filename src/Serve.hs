@@ -1,5 +1,5 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
--- Copyright (C) 2013, 2014  Fraser Tweedale
+-- Copyright (C) 2013, 2014, 2015  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -39,6 +39,7 @@ import Crypto.Persona
 
 import Command
 import Config
+import Middleware
 import Provision
 
 data ServeOpts = ServeOpts Int
@@ -59,6 +60,8 @@ instance Command ServeOpts where
     k <- handleError =<< readConfigJSON "key.json"
 
     scotty port $ do
+      middleware remoteUserX509Middleware
+
       get "/delegated-support" $ json delegatedSupport
       get "/support" $ json support
       get "/.well-known/browserid" $ json support
@@ -76,20 +79,16 @@ instance Command ServeOpts where
         case eitherDecode provReq' of
           Left e -> respondWith badRequest400 e
           Right provReq -> do
-            -- TODO proper DN check (email component, not just infix)
-            dn' <- header "SSL_CLIENT_S_DN"
-            case dn' of
-              Nothing -> status forbidden403
-              Just dn ->
-                if (provReq ^. eml) `T.isInfixOf` TL.toStrict dn
-                then do
-                  let iss = fromString $ T.pack $ delegatedSupport ^. authority
-                  result <- liftIO ((>>= encodeCompact) <$> provision k iss provReq)
-                  case result of
-                    Left e -> respondWith internalServerError500 (show e)
-                    Right cert -> raw cert
-                else
-                  status forbidden403
+            remoteUser <- header "REMOTE_USER"
+            if remoteUser == Just (TL.fromStrict $ provReq ^. eml)
+            then do
+              let iss = fromString $ T.pack $ delegatedSupport ^. authority
+              result <- liftIO ((>>= encodeCompact) <$> provision k iss provReq)
+              case result of
+                Left e -> respondWith internalServerError500 (show e)
+                Right cert -> raw cert
+            else
+              status forbidden403
 
 respondWith :: Status -> String -> ActionM ()
 respondWith e s = status e >> text (TL.pack $ show s)

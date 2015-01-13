@@ -43,12 +43,16 @@ executable persona
     , unix >= 2.7
 
     , aeson >= 0.7
+    , asn1-types >= 0.2
     , blaze-markup >= 0.6
     , hamlet >= 1.2
     , http-types >= 0.8
     , optparse-applicative == 0.9.*
+    , pem >= 0.2
     , scotty >= 0.8
     , shakespeare >= 2.0
+    , wai >= 3.0
+    , x509 >= 1.4
 
     , crypto-random
     , jose >= 0.3.38
