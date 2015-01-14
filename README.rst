@@ -152,17 +152,17 @@ contribution to this README.
 Testing the IdP
 ===============
 
-#. Ensure that a valid client certificate with your email address in
-   the *Subject Distinguished Name* field or *Subject Alternative
-   Name* extension is installed in your browser.
+#. Ensure that the browser will be able to authenticate the user
+   when the provisioning workflow begins (e.g. install client
+   certificate if using certificate authentication).
 
 #. Visit https://login.persona.org/ and click *Sign In*.
 
-#. Enter your email address (the one that is on the certificate) and
-   click *next*.
+#. Enter your email address and click *next*.
 
-#.  If prompted, choose the appropriate client certificate.  The
-    login process should complete without further interaction.
+#. If prompted, select a certificate or complete the required
+   authentication.  The login process should now complete without
+   further interaction.
 
 
 License
