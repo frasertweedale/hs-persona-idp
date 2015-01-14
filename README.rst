@@ -58,7 +58,9 @@ persona-idp requires the webserver to authenticate users.  Several
 mechanisms are supported:
 
 * Any authentication mechanism where the user's email address can be
-  provided to the IdP via the ``REMOTE_USER`` HTTP header.
+  provided to the IdP via the ``REMOTE_USER`` HTTP header.  For
+  security reasons, this header MUST NOT be passed from the original
+  request to the IdP.
 
 * X.509 client certificate authentication can be used.  The
   ``REMOTE_USER`` header MUST NOT be set, and the PEM-encoded client
@@ -92,6 +94,7 @@ directive.
 
         ssl_client_certificate /path/to/ca.pem;
         ssl_verify_client optional;
+        proxy_set_header REMOTE_USER "";
         proxy_set_header SSL_CLIENT_CERT $ssl_client_cert;
 
         location / {
