@@ -1,5 +1,5 @@
 name:                persona-idp
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Persona (BrowserID) Identity Provider
 description:
   .
@@ -16,6 +16,8 @@ license:             AGPL-3
 license-file:        agpl-3.0.txt
 extra-source-files:
   README.rst
+  src/provisioning.hamlet
+  src/provisioning.julius
 author:              Fraser Tweedale
 maintainer:          frase@frase.id.au
 copyright:           Copyright (C) 2013, 2014, 2015  Fraser Tweedale
@@ -60,3 +62,10 @@ executable persona
 
   hs-source-dirs:      src
   main-is:             Main.hs
+  other-modules:
+    Command
+    Config
+    Init
+    Middleware
+    Provision
+    Serve
