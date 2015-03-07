@@ -49,7 +49,7 @@ executable persona
     , blaze-markup >= 0.6
     , hamlet >= 1.2
     , http-types >= 0.8
-    , optparse-applicative == 0.9.*
+    , optparse-applicative >= 0.11
     , pem >= 0.2
     , scotty >= 0.8
     , shakespeare >= 2.0

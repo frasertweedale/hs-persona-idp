@@ -46,7 +46,7 @@ data ServeOpts = ServeOpts Int
 
 instance Command ServeOpts where
   parser = ServeOpts
-    <$> option
+    <$> option auto
       ( long "port"
       <> value 3000
       <> showDefault
