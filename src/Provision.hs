@@ -1,5 +1,5 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
--- Copyright (C) 2014  Fraser Tweedale
+-- Copyright (C) 2014, 2015  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -35,7 +35,6 @@ import Data.Aeson
 import qualified Data.Text as T
 import Data.Time
 
-import Crypto.Random
 import Crypto.JOSE
 import Crypto.JOSE.Legacy
 import Crypto.JWT
@@ -56,6 +55,5 @@ instance FromJSON ProvisioningRequest where
 
 provision :: JWK' -> StringOrURI -> ProvisioningRequest -> IO (Either Error JWT)
 provision k iss ProvisioningRequest{..} = do
-  g <- cprgCreate <$> createEntropyPool :: IO SystemRNG
   t <- getCurrentTime
-  return $ fst $ certify g k iss t _dur _pub (EmailPrincipal _eml)
+  certify k iss t _dur _pub (EmailPrincipal _eml)

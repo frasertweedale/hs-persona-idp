@@ -1,6 +1,6 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
 --
--- Copyright (C) 2013, 2014  Fraser Tweedale
+-- Copyright (C) 2013, 2014, 2015  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -48,9 +48,7 @@ instance Command InitOpts where
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
     in do
-      entropyPool <- createEntropyPool
-      let g = cprgCreate entropyPool :: SystemRNG
-          (k, _) = gen 256 g  -- jwcrypto does not support keys > 2048 bits
+      k <- gen 256  -- jwcrypto does not support keys > 2048 bits
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir

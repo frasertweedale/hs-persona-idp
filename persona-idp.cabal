@@ -56,9 +56,8 @@ executable persona
     , wai >= 3.0
     , x509 >= 1.4
 
-    , crypto-random
-    , jose >= 0.3.38
-    , persona >= 0.1
+    , jose >= 0.4
+    , persona >= 0.2
 
   hs-source-dirs:      src
   main-is:             Main.hs
