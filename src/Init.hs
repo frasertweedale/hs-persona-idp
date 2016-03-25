@@ -1,6 +1,6 @@
 -- This file is part of persona-idp - Persona (BrowserID) Identity Provider
 --
--- Copyright (C) 2013, 2014, 2015  Fraser Tweedale
+-- Copyright (C) 2013, 2014, 2015, 2016  Fraser Tweedale
 --
 -- persona-idp is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -24,6 +24,7 @@ import System.Exit
 import Options.Applicative
 
 import Crypto.JOSE
+import Crypto.JOSE.Legacy (genJWK')
 import Crypto.Persona
 
 import Command
@@ -48,7 +49,7 @@ instance Command InitOpts where
       buildURIPath s = '/' : dropWhile (== '/') (appPath ++ "/" ++ s)
       buildURI = parseRelativeURI . buildURIPath
     in do
-      k <- gen 256  -- jwcrypto does not support keys > 2048 bits
+      k <- genJWK' 256  -- jwcrypto does not support keys > 2048 bits
       auth <- maybe exitFailure return $ buildURI "authentication"
       prov <- maybe exitFailure return $ buildURI "provisioning"
       ensureConfigDir
